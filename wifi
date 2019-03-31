@@ -1,0 +1,116 @@
+#!/bin/bash
+
+conf_dir="/home/ncnd/.supplicant"
+interface="wlp60s0"
+
+function usage(){
+	echo "Usage !"
+	exit 1
+}
+
+function new(){
+	echo "New connection [$1]"
+	cp $conf_dir/template.conf $conf_dir/$1.conf
+	read -p "SSID ? " ssid
+	read -p "Passphrase ? " pass
+	wpa_passphrase $ssid $pass >> $conf_dir/$1.conf
+	echo "Configuration saved"
+	return 0;
+}
+
+function list(){
+	for f in `ls $conf_dir`; do
+		if [ $f != "template.conf" ]; then
+			echo $f | cut -d "." -f 1
+		fi
+	done
+	return 0
+}
+
+function up(){
+	sudo rfkill unblock wlan
+	sudo ip l set $interface up
+	return 0
+}
+
+function down(){
+	sudo killall wpa_supplicant
+	sudo rfkill block wlan
+	return 0
+}
+
+function scan(){
+	up
+	sudo iw dev $interface scan | grep "SSID:" | tr -d "[:blank:]" | cut -d ":" -f "2-"
+	return 0
+}
+
+function connect() {
+	up
+	sudo killall wpa_supplicant
+	sudo wpa_supplicant -B -i$interface -c$1
+	sleep 5
+	dhcpcd $interface
+	return 0
+}
+
+function connectById(){
+	if [ $1 = "template" ]; then
+		return 2
+	fi
+	if [ -f $conf_dir/$1.conf ]; then
+		connect $conf_dir/$1.conf
+		return $?
+	else
+		return 2
+	fi
+}
+
+function scanAndConnect(){
+	echo "Scanning for known SSID"
+	IDs=`scan`
+	for id in $IDs; do
+		conf=`grep "ssid=\"$id\"" .supplicant/* | cut -d ":" -f 1`
+		if [ $conf != "" ]; then
+			echo "SSID $id known. Will now connect"
+			connect $conf
+			return 0
+		fi
+	done
+	echo "No known SSID found. Found : "
+	for id in $IDs; do
+		echo $id
+	done
+	return 0
+}
+
+if [ $# == 0 ]; then
+	usage
+elif [ $1 = "new" ]; then
+	if [ $# == 1 ]; then
+		usage
+	else
+		new $2
+		exit $?
+	fi
+elif [ $1 = "list" ]; then
+	list
+	exit $?
+elif [ $1 = "down" ]; then
+	down
+	exit $?
+elif [ $1 = "scan" ]; then
+	scan
+	exit $?
+elif [ $1 = "connect" ]; then
+	if [ $# == 1 ]; then
+		scanAndConnect
+	else
+		connectById $2
+		ret=$?
+		if [ $ret -eq 2 ]; then
+			echo "Invalid configuration $2"
+		fi
+		exit $ret
+	fi
+fi
