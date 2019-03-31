@@ -4,7 +4,13 @@ conf_dir="/home/ncnd/.supplicant"
 interface="wlp60s0"
 
 function usage(){
-	echo "Usage !"
+	echo "Usage :"
+	echo "wifi new <ID> : creates new configuration with <ID>"
+	echo "wifi list : lists saved networks"
+	echo "wifi down : shuts down wifi"
+	echo "wifi scan : scans available SSIDs"
+	echo "wifi connect <ID> : connects following <ID> configuration"
+	echo "wifi connect : perform scan and connect to first known SSID"
 	exit 1
 }
 
