@@ -1,6 +1,6 @@
 #!/bin/bash
 
-conf_dir="/home/ncnd/.supplicant"
+conf_dir="$HOME/.supplicant"
 interface="wlp60s0"
 
 function usage(){
