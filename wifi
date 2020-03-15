@@ -19,7 +19,7 @@ function new(){
 	cp $conf_dir/template.conf $conf_dir/$1.conf
 	read -p "SSID ? " ssid
 	read -p "Passphrase ? " pass
-	wpa_passphrase $ssid $pass >> $conf_dir/$1.conf
+	wpa_passphrase "$ssid" "$pass" >> $conf_dir/$1.conf
 	echo "Configuration saved"
 	return 0;
 }
